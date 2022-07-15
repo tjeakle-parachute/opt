@@ -22,7 +22,7 @@ uses asdf, oh-my-zsh
 ```
 cd ~
 mv .zshrc .zshrc.old
-ln -s opt
+ln -s opt/.zshrc .zshrc
 ```
 
 I will most likely forget to update the readme for future me but this is how it started!
