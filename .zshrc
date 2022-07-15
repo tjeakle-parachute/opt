@@ -100,10 +100,10 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-#default homebrew install place
+# default homebrew install place
 eval $(/opt/homebrew/bin/brew shellenv)
 
-#asdf config
+# asdf config
 . /opt/homebrew/opt/asdf/libexec/asdf.sh
 
 export NVM_DIR="$HOME/.nvm"
