@@ -26,3 +26,11 @@ ln -s opt/.zshrc .zshrc
 ```
 
 I will most likely forget to update the readme for future me but this is how it started!
+
+```
+cd /Users/tj.eakle/Library/Application Support/Sublime Text/Packages
+mv User User.old
+ln -s /opt/sublime/User 
+```
+
+Also, had to do this for .zprofile.
