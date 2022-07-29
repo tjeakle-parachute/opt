@@ -1,0 +1,1 @@
+PATH=/Users/tj.eakle/.nvm/versions/node/v16.14.0/bin:/Users/tj.eakle/.asdf/shims:/opt/homebrew/opt/asdf/libexec/bin:/Users/tj.eakle/.nvm/versions/node/v16.14.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
