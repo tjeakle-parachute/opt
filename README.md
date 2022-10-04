@@ -34,3 +34,12 @@ ln -s /opt/sublime/User
 ```
 
 Also, had to do this for .zprofile.
+
+Ended up running postgres locally. for some reason, it wouldn't run with libpq.5.dylib from the application.
+
+Ran this command
+
+```
+cd usr/local/lib
+sudo ln -s /System/Volumes/Data/Applications/Postgres.app/Contents/Versions/12/lib/libpq.5.dylib
+```
