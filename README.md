@@ -43,3 +43,9 @@ Ran this command
 cd usr/local/lib
 sudo ln -s /System/Volumes/Data/Applications/Postgres.app/Contents/Versions/12/lib/libpq.5.dylib
 ```
+
+```
+cd ~
+mv .gitconfig .gitconfig.old
+ln -s opt/.gitconfig .gitconfig
+```

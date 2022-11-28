@@ -2,6 +2,9 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 # bug in system openssl that makes it impossible to install new rubies.
 export PATH=/opt/homebrew/opt/openssl@1.1/bin:$PATH
+# Because of weird postgres install
+export PATH=/System/Volumes/Data/Applications/Postgres.app/Contents/Versions/12/bin:$PATH
+export PATH=/opt/homebrew/opt/libpq/bin:$PATH
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
