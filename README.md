@@ -58,5 +58,5 @@ To use prepare-commit-msg
 
 ```
 cd /Users/tj.eakle/Documents/code/app-workflow/.git/hooks
-ln -s ~/opt/prepare-commit-msg
+ln -s ~/opt/git/hooks/prepare-commit-msg
 ```
