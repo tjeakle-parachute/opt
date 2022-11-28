@@ -1,4 +1,5 @@
 # opt
+
 Optional things I created to make my life easier!
 
 Meant to be checked out and used in /Users/tj.eakle
@@ -14,6 +15,7 @@ cd /Users/tj.eakle/Library/Application Support/iTerm2
 mv Scripts Scripts.old
 ln -s /Users/tj.eakle/opt/iTerm2/Scripts Scripts
 ```
+
 Currently only running app-worker is particularly useful.
 
 .zshrc is symbolically linked in my home directory so i can back it up and control it here.
@@ -30,7 +32,7 @@ I will most likely forget to update the readme for future me but this is how it 
 ```
 cd /Users/tj.eakle/Library/Application Support/Sublime Text/Packages
 mv User User.old
-ln -s /opt/sublime/User 
+ln -s ~/opt/sublime/User
 ```
 
 Also, had to do this for .zprofile.
@@ -44,8 +46,17 @@ cd usr/local/lib
 sudo ln -s /System/Volumes/Data/Applications/Postgres.app/Contents/Versions/12/lib/libpq.5.dylib
 ```
 
+To add gitconfig
+
 ```
 cd ~
 mv .gitconfig .gitconfig.old
 ln -s opt/.gitconfig .gitconfig
+```
+
+To use prepare-commit-msg
+
+```
+cd /Users/tj.eakle/Documents/code/app-workflow/.git/hooks
+ln -s ~/opt/prepare-commit-msg
 ```

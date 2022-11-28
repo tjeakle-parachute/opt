@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+require 'active_support'
+require 'active_support/core_ext'
+
+class EnsureJiraMessage
+  def self.call
+    new.call
+  end
+
+  attr_reader :original_message
+
+  def initialize
+    @original_message = File.read(message_filepath).gsub(/^#.*$/, '').strip
+  end
+
+  def call
+    return if ticket_number.blank?
+    return if already_prefixed? && already_suffixed?
+
+    File.open(message_filepath, 'w') { |f| f.write(new_message) }
+  end
+
+  def new_message
+    @new_message ||= original_message.dup.tap do |msg|
+      msg.prepend(prefix) unless already_prefixed?
+      msg.concat(suffix) unless already_suffixed?
+    end
+  end
+
+  def already_prefixed?
+    original_message.include?(prefix)
+  end
+
+  def already_suffixed?
+    original_message.include?(suffix)
+  end
+
+  def message_filepath
+    @message_filepath ||= ARGV[0] || '.git/COMMIT_EDITMSG'
+  end
+
+  def prefix
+    "#{ticket_number}: "
+  end
+
+  def suffix
+    "\n\nhttps://parachutehealth.atlassian.net/browse/#{ticket_number}"
+  end
+
+  def ticket_number
+    %r{^(?:feature/|bugfix/|)(WF-\d+)}.match(branch).to_a[1]
+  end
+
+  def branch
+    branch_from_ref.strip.presence # || branch_from_rebase.strip.presence
+  end
+
+  def branch_from_ref
+    `git symbolic-ref --short HEAD`.to_s.strip
+  end
+
+  def branch_from_rebase
+    File.read('.git/rebase-merge/head-name').to_s.strip.gsub('refs/heads/', '')
+  end
+end
+
+EnsureJiraMessage.call
