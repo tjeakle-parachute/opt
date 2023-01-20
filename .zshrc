@@ -117,3 +117,5 @@ export NVM_DIR="$HOME/.nvm"
 # rvm config
 export PATH="$PATH:$HOME/.rvm/bin"
 # source /Users/tj.eakle/.bashrc
+
+cd app-workflow
