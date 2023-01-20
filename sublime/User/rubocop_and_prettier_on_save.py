@@ -20,7 +20,8 @@ class LintersOnSave(sublime_plugin.EventListener):
         haml_filetypes = [".haml"]
         if view.match_selector(0, "source.ruby"): # or filetype in ruby_filetypes:
             view.window().run_command('exec', {
-                'cmd': ['rubocop', '-a', filename],
+                'cmd': ['which ruby'],
+                'cmd': ['rubocop', '-A', filename],
                 'working_dir': os.path.dirname(filename),
             })
         elif filetype in npx_filetypes:
