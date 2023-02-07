@@ -120,3 +120,5 @@ export PATH="$PATH:$HOME/.rvm/bin"
 # source /Users/tj.eakle/.bashrc
 
 cd app-workflow
+
+puts "hello!"
