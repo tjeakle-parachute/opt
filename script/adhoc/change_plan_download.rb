@@ -20,8 +20,8 @@ INSURANCE_TYPES.each do |insurance_type|
   responses.push(h)
 end
 
-response = Faraday.get('https://connectcenter.changehealthcare.com/publicApi/payer/getPayerList')
-all_plans = JSON.parse(response.body)['responseData']
+all_plan_response = Faraday.get('https://connectcenter.changehealthcare.com/publicApi/payer/getPayerList')
+all_plans = JSON.parse(all_plan_response.body)['responseData']
 
 counts = {}
 INSURANCE_TYPES.each do |insurance_type|

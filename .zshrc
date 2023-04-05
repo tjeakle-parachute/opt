@@ -108,9 +108,6 @@ source $ZSH/oh-my-zsh.sh
 # default homebrew install place
 eval $(/opt/homebrew/bin/brew shellenv)
 
-# asdf config
-. /opt/homebrew/opt/asdf/libexec/asdf.sh
-
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
@@ -119,4 +116,6 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="$PATH:$HOME/.rvm/bin"
 # source /Users/tj.eakle/.bashrc
 
-cd app-workflow
+
+#stuff for sublime
+#export PATH="$PATH:/Users/tj.eakle/.rvm/rubies/ruby-3.1.2/bin/ruby"
