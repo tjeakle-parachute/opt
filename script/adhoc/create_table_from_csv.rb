@@ -40,7 +40,7 @@ CSV.foreach(csv) do |row|
   next if row == columns
 
   values = row.map do |x|
-    x.nil? || x.strip.empty? || x == [] ? 'NULL' : %('#{x.gsub("'", "''")}')
+    x.nil? || x.strip.empty? || x == [] ? 'NULL' : %('#{x.gsub("'", "''").strip}')
   end.join(',') + ', NULL'
   this_insert_string = "#{insert_string}#{values})"
   conn.exec this_insert_string
