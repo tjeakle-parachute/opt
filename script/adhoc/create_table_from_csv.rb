@@ -6,8 +6,24 @@ require 'pg'
 
 conn = PG.connect(dbname: 'change_payers', user: 'postgres', password: 'postgres')
 
-csv = 'change_plans.csv'
-table_name = 'change_plans'
+# csv = 'change_plans.csv'
+# table_name = 'change_plans'
+
+# csv = 'plan_families.csv'
+# table_name = 'plan_families'
+
+# csv = 'plan_family_words.csv'
+# table_name = 'plan_family_words'
+
+# csv = 'change_plan_words.csv'
+# table_name = 'change_plan_words'
+
+# csv = 'plan_families_with_volume.csv'
+# table_name = 'plan_families_with_volume'
+
+csv = 'change_plan_plan_family_matches.csv'
+table_name = 'change_plan_plan_family_matches'
+
 drop_table = "DROP TABLE #{table_name}"
 
 begin
@@ -40,7 +56,7 @@ CSV.foreach(csv) do |row|
   next if row == columns
 
   values = row.map do |x|
-    x.nil? || x.strip.empty? || x == [] ? 'NULL' : %('#{x.gsub("'", "''").strip}')
+    x.nil? || x.strip.empty? || x == [] ? 'NULL' : %('#{x.gsub("'", "''").strip.squeeze(' ')}')
   end.join(',') + ', NULL'
   this_insert_string = "#{insert_string}#{values})"
   conn.exec this_insert_string
