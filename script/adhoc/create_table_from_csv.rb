@@ -4,60 +4,161 @@ require 'pry'
 require 'csv'
 require 'pg'
 
-conn = PG.connect(dbname: 'change_payers', user: 'postgres', password: 'postgres')
+class CsvToPgTable
+  def run
+    conn = connect_to_database
+    csv = choose_csv
+    table_name = choose_table_name csv
+    drop_old_table conn, table_name
+    columns = data_types_in_columns csv
+    create_table conn, table_name, columns
+    insert_data_into_table conn, table_name, csv
+    final_message table_name, csv
+  end
 
-# csv = 'change_plans.csv'
-# table_name = 'change_plans'
+  def integer?(string)
+    string.to_i.to_s == string
+  end
 
-# csv = 'plan_families.csv'
-# table_name = 'plan_families'
+  def convert_camel_case_to_snake_case(column_name)
+    column_name.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+               .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+               .downcase
+  end
 
-# csv = 'plan_family_words.csv'
-# table_name = 'plan_family_words'
+  def format_for_insert(value_hash)
+    if value_hash.nil? || value_hash.strip.empty? || value_hash == []
+      'NULL'
+    else
+      %('#{value_hash.gsub("'",
+                           "''").strip.squeeze(' ')}')
+    end
+  end
 
-# csv = 'change_plan_words.csv'
-# table_name = 'change_plan_words'
+  def connect_to_database
+    puts 'enter database name, (default: change_payers)'
+    dbname = gets.chomp
+    dbname = 'change_payers' if dbname.empty?
+    puts 'enter user, (default: postgres)'
+    user = gets.chomp
+    user = 'postgres' if user.empty?
+    puts 'password (default: postgres)'
+    password = gets.chomp
+    password = 'postgres' if password.empty?
 
-# csv = 'plan_families_with_volume.csv'
-# table_name = 'plan_families_with_volume'
+    PG.connect(dbname: dbname, user: user, password: password)
+  end
 
-csv = 'change_plan_plan_family_matches.csv'
-table_name = 'change_plan_plan_family_matches'
+  def choose_csv
+    csv_in_directory = Dir["#{Dir.getwd}/*.csv"]
 
-drop_table = "DROP TABLE #{table_name}"
+    puts 'Choose which csv you want to import to a table by entering the number at the beginning:'
 
-begin
-  conn.exec drop_table
-rescue StandardError
-  puts 'no table exists'
+    csv_in_directory.each_with_index do |path, index|
+      path.gsub!("#{Dir.getwd}/", '')
+      puts "#{index}: #{path}"
+    end
+
+    chosen_index = gets.chomp
+
+    csv = csv_in_directory[chosen_index.to_i]
+
+    validate_chosen_index csv, chosen_index
+
+    csv
+  end
+
+  def validate_chosen_index(csv, chosen_index)
+    if !integer?(chosen_index)
+      abort 'You have entered an invalid option.'
+    elsif csv.nil?
+      abort 'You have entered an invalid option.'
+    end
+  end
+
+  def choose_table_name(csv)
+    puts 'Enter table name. (will attempt to use filename if blank). ' \
+         'If the tablename is the same, the old table will be dropped.'
+
+    table_name = gets.chomp
+
+    table_name = csv.gsub('.csv', '') if table_name.empty?
+
+    table_name
+  end
+
+  def drop_old_table(conn, table_name)
+    drop_table = "DROP TABLE #{table_name}"
+
+    begin
+      conn.exec drop_table
+    rescue StandardError
+      puts 'no existing table to drop'
+    end
+  end
+
+  def data_types_in_columns(csv)
+    columns = nil
+    data_type_hash = {}
+    row_iteration = 0
+    CSV.foreach(csv, converters: :all) do |row|
+      if row_iteration.zero?
+        columns = row
+        columns.each do |header|
+          data_type_hash[:"#{header}"] = nil
+        end
+      end
+      if row_iteration.positive?
+        value_iteration = 0
+        columns.each do |header|
+          set_postgres_datatype header, data_type_hash, row[value_iteration]
+          value_iteration += 1
+        end
+      end
+      row_iteration += 1
+    end
+
+    data_type_hash
+  end
+
+  def set_postgres_datatype(header, data_type_hash, row)
+    if row.instance_of?(String)
+      data_type_hash[:"#{header}"] = 'TEXT'
+    elsif row.instance_of?(Float) && data_type_hash[:"#{header}"] != 'TEXT'
+      data_type_hash[:"#{header}"] = 'DECIMAL'
+    elsif row.instance_of?(Integer) && data_type_hash[:"#{header}"].nil?
+      data_type_hash[:"#{header}"] = 'BIGINT'
+    end
+  end
+
+  def create_table(conn, table_name, columns)
+    table_creation = "CREATE TABLE #{table_name} ("
+    columns.each_with_index  do |(key, _value), index|
+      table_creation += ' , ' if index.positive?
+      table_creation += "#{convert_camel_case_to_snake_case(key.to_s)} #{columns[:"#{key}"]}"
+    end
+    table_creation += ')'
+
+    conn.exec(table_creation)
+  end
+
+  def insert_data_into_table(conn, table_name, csv)
+    insert_string = "INSERT INTO #{table_name} VALUES ("
+
+    CSV.foreach(csv).with_index do |row, index|
+      next if index.zero?
+
+      values = row.map do |x|
+        format_for_insert x
+      end.join(',')
+      this_insert_string = "#{insert_string}#{values})"
+      conn.exec this_insert_string
+    end
+  end
+
+  def final_message(table_name, csv)
+    puts "#{table_name} has been created using #{csv}"
+  end
 end
 
-columns = nil
-CSV.foreach(csv) do |row|
-  columns = row
-  break
-end
-
-# This is really janky
-table_creation = "CREATE TABLE #{table_name} ("
-columns.each do |column_name|
-  table_creation += "#{column_name.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-        .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-        .downcase}        TEXT,"
-end
-table_creation += 'last_column TEXT'
-table_creation += ')'
-
-conn.exec(table_creation)
-
-insert_string = "INSERT INTO #{table_name} VALUES ("
-
-CSV.foreach(csv) do |row|
-  next if row == columns
-
-  values = row.map do |x|
-    x.nil? || x.strip.empty? || x == [] ? 'NULL' : %('#{x.gsub("'", "''").strip.squeeze(' ')}')
-  end.join(',') + ', NULL'
-  this_insert_string = "#{insert_string}#{values})"
-  conn.exec this_insert_string
-end
+CsvToPgTable.new.run
