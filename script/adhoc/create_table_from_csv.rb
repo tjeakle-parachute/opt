@@ -5,15 +5,21 @@ require 'csv'
 require 'pg'
 
 class CsvToPgTable
+  def initialize(conn: nil, csv: nil, table_name: nil)
+    @conn = conn
+    @csv = csv
+    @table_name = table_name
+  end
+
   def run
-    conn = connect_to_database
-    csv = choose_csv
-    table_name = choose_table_name csv
-    drop_old_table conn, table_name
-    columns = data_types_in_columns csv
-    create_table conn, table_name, columns
-    insert_data_into_table conn, table_name, csv
-    final_message table_name, csv
+    @conn = connect_to_database if @conn.nil?
+    @csv = choose_csv if @csv.nil?
+    @table_name = choose_table_name if @table_name.nil?
+    drop_old_table
+    @columns = data_types_in_columns
+    create_table
+    insert_data_into_table
+    final_message
   end
 
   def integer?(string)
@@ -36,10 +42,10 @@ class CsvToPgTable
   end
 
   def connect_to_database
-    puts 'enter database name, (default: change_payers)'
+    puts 'enter database name (default: change_payers)'
     dbname = gets.chomp
     dbname = 'change_payers' if dbname.empty?
-    puts 'enter user, (default: postgres)'
+    puts 'enter user (default: postgres)'
     user = gets.chomp
     user = 'postgres' if user.empty?
     puts 'password (default: postgres)'
@@ -76,32 +82,32 @@ class CsvToPgTable
     end
   end
 
-  def choose_table_name(csv)
+  def choose_table_name
     puts 'Enter table name. (will attempt to use filename if blank). ' \
          'If the tablename is the same, the old table will be dropped.'
 
     table_name = gets.chomp
 
-    table_name = csv.gsub('.csv', '') if table_name.empty?
+    table_name = @csv.gsub('.csv', '') if table_name.empty?
 
     table_name
   end
 
-  def drop_old_table(conn, table_name)
-    drop_table = "DROP TABLE #{table_name}"
+  def drop_old_table
+    drop_table = "DROP TABLE #{@table_name}"
 
     begin
-      conn.exec drop_table
+      @conn.exec drop_table
     rescue StandardError
       puts 'no existing table to drop'
     end
   end
 
-  def data_types_in_columns(csv)
+  def data_types_in_columns
     columns = nil
     data_type_hash = {}
     row_iteration = 0
-    CSV.foreach(csv, converters: :all) do |row|
+    CSV.foreach(@csv, converters: :all) do |row|
       if row_iteration.zero?
         columns = row
         columns.each do |header|
@@ -131,34 +137,36 @@ class CsvToPgTable
     end
   end
 
-  def create_table(conn, table_name, columns)
-    table_creation = "CREATE TABLE #{table_name} ("
-    columns.each_with_index  do |(key, _value), index|
+  def create_table
+    table_creation = "CREATE TABLE #{@table_name} ("
+    @columns.each_with_index  do |(key, _value), index|
       table_creation += ' , ' if index.positive?
-      table_creation += "#{convert_camel_case_to_snake_case(key.to_s)} #{columns[:"#{key}"]}"
+      table_creation += "#{convert_camel_case_to_snake_case(key.to_s)} #{@columns[:"#{key}"]}"
     end
     table_creation += ')'
 
-    conn.exec(table_creation)
+    @conn.exec(table_creation)
   end
 
-  def insert_data_into_table(conn, table_name, csv)
-    insert_string = "INSERT INTO #{table_name} VALUES ("
+  def insert_data_into_table
+    insert_string = "INSERT INTO #{@table_name} VALUES ("
 
-    CSV.foreach(csv).with_index do |row, index|
+    CSV.foreach(@csv).with_index do |row, index|
       next if index.zero?
 
       values = row.map do |x|
         format_for_insert x
       end.join(',')
       this_insert_string = "#{insert_string}#{values})"
-      conn.exec this_insert_string
+      @conn.exec this_insert_string
     end
   end
 
-  def final_message(table_name, csv)
-    puts "#{table_name} has been created using #{csv}"
+  def final_message
+    puts "#{@table_name} has been created using #{@csv}"
   end
 end
 
-CsvToPgTable.new.run
+c = PG.connect(dbname: 'change_payers', user: 'postgres', password: 'postgres')
+x = CsvToPgTable.new(conn: c)
+x.run
