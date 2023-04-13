@@ -5,6 +5,7 @@ require 'pry'
 require 'fuzzy_match'
 require 'amatch'
 require 'pg'
+require_relative 'csv_to_pg_table'
 
 start_time = Time.now
 
@@ -13,7 +14,8 @@ LOW_VALUE_WORDS = %w[health plan of group insurance inc new].freeze
 # we don't adjust the value not implmented. everything not in other is mid value
 MID_VALUE_WORDS = %w[care medical community healthcare life services].freeze
 # we double the importance
-HIGH_VALUE_WORDS = %w[medicare medicaid commerical advantage].freeze
+HIGH_VALUE_WORDS = %w[medicare medicaid commerical].freeze
+# advantage
 # we call these 3
 CARRIER_WORDS = %w[blue bluecross blueshield bcbs cross shield unitedhealthcare humana aetna].freeze
 
@@ -27,7 +29,7 @@ plan_family_sql = "SELECT *
                     WHERE pf.id = TO_NUMBER(COALESCE(pfv.id, '0') , '99999999999')
                     AND num_accepted IS NOT NULL
                     ORDER BY TO_NUMBER(COALESCE(num_accepted, '0') , '99999999999') desc
-                      LIMIT 20"
+                      LIMIT 180"
 
 # plan_family_sql = "SELECT *
 #                   FROM plan_families
@@ -95,9 +97,9 @@ CSV.open('change_plan_plan_family_matches.csv', 'w') do |csv|
       if %w[Commercial/HMO Blue Cross/Blue Shield Workers Compensation
             TRICARE/CHAMPUS].include?(cp['claim_insurance_type']) && pf['plan_type'] == 'commercial'
         cp['match_score'] += 1
-      elsif cp['claim_insurance_type'] == 'Medicare' && pf['plan_type'] == 'Medicare'
+      elsif cp['claim_insurance_type'] == 'Medicare' && pf['plan_type'] == 'medicare'
         cp['match_score'] += 1
-      elsif cp['claim_insurance_type'] == 'Medicaid' && pf['plan_type'] == 'Medicaid'
+      elsif cp['claim_insurance_type'] == 'Medicaid' && pf['plan_type'] == 'medicaid'
         cp['match_score'] += 1
       else
         cp['type_mismatch'] = true
@@ -122,7 +124,7 @@ CSV.open('change_plan_plan_family_matches.csv', 'w') do |csv|
       end
       pf['plan_names'].push cp['payer_name']
       pf['matches'].push cp
-      csv << [pf['id'], pf['last_column'], pf['name'], pf['plan_type'], cp['match_score'], cp['payer_name'],
+      csv << [pf['id'], pf['num_accepted'], pf['name'], pf['plan_type'], cp['match_score'], cp['payer_name'],
               cp['eligibility_realtime_payer_id'], cp['claim_insurance_type'], cp['eligibility_realtime_payer_id_match_score'], cp['name_change_plan_match_score'], cp['type_mismatch']]
 
       # puts "Match found for plan_family #{pf['name']} and change payer #{cp['payer_name']} with #{cp['words_matched']} matched word."
@@ -135,5 +137,15 @@ end
 end_time = Time.now
 
 puts "time to run: #{end_time - start_time}"
+
+start_time = Time.now
+
+c = PG.connect(dbname: 'change_payers', user: 'postgres', password: 'postgres')
+x = CsvToPgTable.new(conn: c, csv: 'change_plan_plan_family_matches.csv', table_name: 'change_plan_plan_family_matches')
+x.run
+
+end_time = Time.now
+
+puts "time to import: #{end_time - start_time}"
 
 binding.pry
