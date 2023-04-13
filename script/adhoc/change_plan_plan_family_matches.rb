@@ -22,11 +22,12 @@ conn = PG.connect(dbname: 'change_payers', user: 'postgres', password: 'postgres
 # plan_families = conn.exec("SELECT * FROM plan_families WHERE id = '28'")
 
 plan_family_sql = "SELECT *
-                    FROM plan_families
-                    WHERE last_column IS NOT NULL
-                    AND plan_type = 'commercial'
-                    ORDER BY TO_NUMBER(last_column, '99999999999') desc
-                    LIMIT 5"
+                    FROM plan_families pf,
+                       plan_families_with_volume pfv
+                    WHERE pf.id = TO_NUMBER(COALESCE(pfv.id, '0') , '99999999999')
+                    AND num_accepted IS NOT NULL
+                    ORDER BY TO_NUMBER(COALESCE(num_accepted, '0') , '99999999999') desc
+                      LIMIT 20"
 
 # plan_family_sql = "SELECT *
 #                   FROM plan_families
@@ -56,7 +57,7 @@ CSV.open('change_plan_plan_family_matches.csv', 'w') do |csv|
       end
       cp['words_matched'] = 0
       cp['match_score'] = 0
-      plan_family_words = conn.exec("SELECT * FROM plan_family_words WHERE plan_family_id = '#{pf['id']}' ORDER BY TO_NUMBER(COALESCE(last_column, '0') , '99999999999') desc")
+      plan_family_words = conn.exec("SELECT * FROM plan_family_words WHERE plan_family_id = #{pf['id']}")
       pf['words'] = 0
       plan_family_words.each do |pfw|
         pf['words'] += 1
@@ -127,7 +128,7 @@ CSV.open('change_plan_plan_family_matches.csv', 'w') do |csv|
       # puts "Match found for plan_family #{pf['name']} and change payer #{cp['payer_name']} with #{cp['words_matched']} matched word."
     end
     pf['eligibility_realtime_payer_ids'].uniq!
-    # puts "There are #{pf['matches'].size} total matches for plan_family #{pf['name']}"
+    puts "There are #{pf['matches'].size} total matches for plan_family #{pf['name']}"
   end
 end
 
